@@ -5,6 +5,7 @@ const expect = chai.expect;
 const should = chai.should();
 const request = require('supertest');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const server = require('../server');
 const baseUrl = 'http://localhost:3000';
@@ -89,6 +90,24 @@ describe('server', () => {
         });
     });
 
+    // it('GET request to /message/:id?encrypt=true returns the message encyrpted', (done) => {
+    //   request(baseUrl)
+    //     .get('/message/1?encrypt=true')
+    //     .expect(200)
+    //     .expect('Content-Type', 'text/plain; charset=utf-8')
+    //     .end((error, response) => {
+    //       if (error) {
+    //         done(error);
+    //         return;
+    //       }
+    //       console.log(`response text: ${response.text}`)
+    //       console.log(`decrypted text: ${decrypt(response.text)}`)
+    //       let result = JSON.parse(decrypt(response.text));
+    //       result.should.be.a('object');
+    //       result.should.eql({id: 1, message: "This is a test message."});
+    //       done();
+    //     });
+    // });
     it('GET request to /message/:id?encrypt=true returns the message encyrpted', (done) => {
       request(baseUrl)
         .get('/message/1?encrypt=true')
@@ -99,10 +118,17 @@ describe('server', () => {
             done(error);
             return;
           }
-          let result = JSON.parse(decrypt(response.text));
-          result.should.be.a('object');
-          result.should.eql({id: 1, message: "This is a test message."});
-          done();
+          bcrypt.compare(
+            '{"message":"This is a test message.","id":1}',
+            response.text,
+            (error, response) => {
+              if (error) {
+                return done(error);
+              }
+              response.should.eql(true);
+              done();
+            }
+          );
         });
     });
 
@@ -116,10 +142,18 @@ describe('server', () => {
             done(error);
             return;
           }
-          let result = JSON.parse(decrypt(response.text));
-          result.should.be.a('Array');
-          result.should.eql([{id:1, message: "This is a test message."}]);
-          done();
+          bcrypt.compare('[{"message":"This is a test message.","id":1}]',
+          response.text, (err, resp) => {
+            if(err){
+              return done(err)
+            }
+            resp.should.eql(true)
+            done()
+          })
+          // let result = JSON.parse(decrypt(response.text));
+          // result.should.be.a('Array');
+          // result.should.eql([{id:1, message: "This is a test message."}]);
+          // done();
         });
     });
 
